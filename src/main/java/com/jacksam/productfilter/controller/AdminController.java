@@ -1,11 +1,14 @@
 package com.jacksam.productfilter.controller;
 
 import com.jacksam.productfilter.dto.GrantAccessRequest;
+import com.jacksam.productfilter.entity.Category;
+import com.jacksam.productfilter.entity.User;
+import com.jacksam.productfilter.repository.CategoryRepository;
+import com.jacksam.productfilter.repository.UserRepository;
 import com.jacksam.productfilter.service.AuditService;
 import com.jacksam.productfilter.service.ProductService;
 import com.jacksam.productfilter.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,13 +22,19 @@ public class AdminController {
     private final ProductService productService;
     private final UserService userService;
     private final AuditService auditService;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
     public AdminController(ProductService productService,
                            UserService userService,
-                           AuditService auditService) {
+                           AuditService auditService,
+                           CategoryRepository categoryRepository,
+                           UserRepository userRepository) {
         this.productService = productService;
         this.userService = userService;
         this.auditService = auditService;
+        this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/user-access/bulk-grant")
@@ -56,6 +65,18 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         return ResponseEntity.ok(auditService.getAuditLogs(userId, PageRequest.of(page, size)));
+    }
+
+    @GetMapping("/categories")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getCategories() {
+        return ResponseEntity.ok(categoryRepository.findByParentCategoryIdIsNull());
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
     }
 
     @PostMapping("/users")

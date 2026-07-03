@@ -27,6 +27,25 @@ docker-compose up
 
 > Requires Docker Desktop. Download from https://docs.docker.com/desktop/install/mac-install
 
+### Run with Web Dashboard
+
+The app serves the React dashboard at `http://localhost:8080` automatically. Visit it in your browser and log in with the test accounts.
+
+**Frontend dev mode (hot reload):**
+```bash
+cd frontend
+npm install
+npm run dev
+# Starts on http://localhost:5173, proxies API to backend on :8080
+```
+
+**Production build** (frontend is bundled into the JAR):
+```bash
+cd frontend && npm ci && npm run build
+cd .. && mvn package -DskipTests
+java -jar target/product-filter-1.0.0.jar --spring.profiles.active=dev
+```
+
 ## Architecture
 
 ```
@@ -66,6 +85,33 @@ docker-compose up
 | Cache | Spring Cache (in-memory) |
 | Build | Maven |
 | Deployment | Docker / Docker Compose |
+
+## Web Dashboard
+
+A full-featured React dashboard with real-time filtering, pagination, and admin controls.
+
+### Pages
+
+| Page | Path | Access | Description |
+|---|---|---|---|
+| Login | `/login` | Public | Sign in with JWT |
+| Dashboard | `/` | All | Product stats overview |
+| Products | `/products` | All | List, search, filter products |
+| New Product | `/products/new` | All | Create a product |
+| Users | `/users` | ADMIN | Create and manage users |
+| Access | `/access` | ADMIN | Grant/revoke product access |
+| Audit Logs | `/audit-logs` | ADMIN | View all audit events |
+
+### Tech Stack (Frontend)
+
+| Layer | Technology |
+|---|---|
+| Framework | React 18 + TypeScript |
+| Build | Vite 4 |
+| Styling | TailwindCSS 3 |
+| Routing | React Router 6 |
+| API | Axios (auto JWT, redirect on 401) |
+| Notifications | react-hot-toast |
 
 ## Pre-loaded Test Accounts
 
@@ -216,6 +262,8 @@ product_access_metrics (id, product_id, total_views, total_edits, unique_users, 
 
 ## Project Structure
 
+### Backend (`src/`)
+
 ```
 src/main/java/com/jacksam/productfilter/
 ├── ProductFilterApplication.java     # Entry point (@EnableCaching)
@@ -240,8 +288,43 @@ src/main/java/com/jacksam/productfilter/
     └── AuditService.java             # Audit logging
 ```
 
+### Frontend (`frontend/`)
+
+```
+frontend/
+├── index.html                       # Vite entry
+├── package.json                     # Dependencies
+├── vite.config.ts                   # Vite + dev proxy to :8080
+├── tailwind.config.js
+├── postcss.config.js
+├── tsconfig.json
+└── src/
+    ├── main.tsx                     # React root (BrowserRouter + AuthProvider)
+    ├── App.tsx                      # Route definitions
+    ├── index.css                    # Tailwind directives
+    ├── api/
+    │   └── client.ts                # Axios instance (JWT interceptor, all API calls)
+    ├── contexts/
+    │   └── AuthContext.tsx           # Auth state (user, token, login, logout)
+    ├── components/
+    │   ├── Layout.tsx               # Sidebar + main content area
+    │   ├── Sidebar.tsx              # Navigation (role-aware)
+    │   └── ProtectedRoute.tsx       # Auth + admin guards
+    ├── pages/
+    │   ├── Login.tsx                # Sign-in form with test account hints
+    │   ├── Dashboard.tsx            # Product stats cards
+    │   ├── Products.tsx             # Filterable product table + pagination
+    │   ├── ProductForm.tsx          # Create/edit product form
+    │   ├── Users.tsx                # User list + create user form
+    │   ├── UserAccess.tsx           # Grant product access to users
+    │   └── AuditLogs.tsx            # Audit event viewer
+    └── types/
+        └── index.ts                 # TypeScript interfaces
+```
+
 ## Features Implemented
 
+### Backend
 - [x] JWT authentication (3 pre-seeded users)
 - [x] RBAC with fine-grained permissions (12 permission types)
 - [x] Multi-field product filtering (search, price range, category, stock)
@@ -255,3 +338,18 @@ src/main/java/com/jacksam/productfilter/
 - [x] Global exception handling
 - [x] Docker Compose (app + PostgreSQL)
 - [x] Dev profile (H2 in-memory, no Docker needed)
+
+### Frontend
+- [x] Login page with JWT authentication
+- [x] Dashboard with product statistics cards
+- [x] Product list with search, filter, sort, and pagination
+- [x] Product create/edit form
+- [x] User management (list + create)
+- [x] Access grant interface
+- [x] Audit log viewer with action labels
+- [x] Role-aware sidebar navigation (admin pages hidden for non-admins)
+- [x] SPA routing (React Router)
+- [x] Auto-redirect to login on 401
+- [x] TailwindCSS responsive design
+- [x] Hot-reload dev server (Vite) with API proxy
+- [x] Production build bundled into backend JAR
