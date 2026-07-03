@@ -3,6 +3,7 @@ package com.jacksam.productfilter.dto;
 import com.jacksam.productfilter.entity.Product;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ProductDTO(
         Long id,
@@ -17,7 +18,8 @@ public record ProductDTO(
         Long ownerId,
         Long departmentId,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        List<String> tags
 ) {
     public static ProductDTO from(Product p) {
         return new ProductDTO(
@@ -27,7 +29,8 @@ public record ProductDTO(
                 p.getCategory() != null ? p.getCategory().getId() : null,
                 p.getCategory() != null ? p.getCategory().getName() : null,
                 p.getOwnerId(), p.getDepartmentId(),
-                p.getCreatedAt(), p.getUpdatedAt()
+                p.getCreatedAt(), p.getUpdatedAt(),
+                List.of()
         );
     }
 }

@@ -11,7 +11,7 @@ const OPERATORS: Record<string, string[]> = {
 const ACTIONS = ['TAG', 'HIDE', 'SHOW', 'FLAG']
 
 function emptyRule(): Partial<FilterRule> {
-  return { name: '', field: 'name', operator: 'contains', value: '', actionType: 'TAG', actionValue: '', enabled: true, description: '' }
+  return { name: '', field: 'name', operator: 'contains', ruleValue: '', actionType: 'TAG', actionValue: '', enabled: true, description: '' }
 }
 
 export default function FilterRules() {
@@ -86,7 +86,7 @@ export default function FilterRules() {
                 <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
                 <td className="px-4 py-3 text-gray-500">
                   <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
-                    {r.field} {r.operator} "{r.value}"
+                    {r.field} {r.operator} "{r.ruleValue}"
                   </code>
                 </td>
                 <td className="px-4 py-3">
@@ -179,8 +179,8 @@ export default function FilterRules() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Value</label>
                   <input
-                    value={editing.value || ''}
-                    onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                    value={editing.ruleValue || ''}
+                    onChange={(e) => setEditing({ ...editing, ruleValue: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>

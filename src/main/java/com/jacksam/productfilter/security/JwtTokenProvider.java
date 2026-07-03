@@ -41,6 +41,12 @@ public class JwtTokenProvider {
         return Long.parseLong(parseClaims(token).getSubject());
     }
 
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromToken(String token) {
+        List<String> roles = parseClaims(token).get("roles", List.class);
+        return roles != null ? roles : List.of();
+    }
+
     public boolean validateToken(String token) {
         try {
             parseClaims(token);

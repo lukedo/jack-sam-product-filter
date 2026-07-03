@@ -16,14 +16,14 @@ public class FilterRule {
     @Column(length = 1000)
     private String description;
 
-    @Column(name = "field", nullable = false)
+    @Column(nullable = false)
     private String field;
 
-    @Column(name = "operator", nullable = false)
+    @Column(nullable = false)
     private String operator;
 
-    @Column(name = "value", nullable = false)
-    private String value;
+    @Column(name = "rule_value", nullable = false)
+    private String ruleValue;
 
     @Column(name = "logic_group")
     private String logicGroup = "default";
@@ -51,8 +51,8 @@ public class FilterRule {
     public void setField(String field) { this.field = field; }
     public String getOperator() { return operator; }
     public void setOperator(String operator) { this.operator = operator; }
-    public String getValue() { return value; }
-    public void setValue(String value) { this.value = value; }
+    public String getRuleValue() { return ruleValue; }
+    public void setRuleValue(String ruleValue) { this.ruleValue = ruleValue; }
     public String getLogicGroup() { return logicGroup; }
     public void setLogicGroup(String logicGroup) { this.logicGroup = logicGroup; }
     public int getRuleOrder() { return ruleOrder; }

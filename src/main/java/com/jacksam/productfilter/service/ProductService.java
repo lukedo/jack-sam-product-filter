@@ -4,25 +4,30 @@ import com.jacksam.productfilter.dto.CreateProductRequest;
 import com.jacksam.productfilter.dto.ProductDTO;
 import com.jacksam.productfilter.dto.ProductFilterRequest;
 import com.jacksam.productfilter.entity.Category;
+import com.jacksam.productfilter.entity.FilterRule;
 import com.jacksam.productfilter.entity.Product;
 import com.jacksam.productfilter.entity.ProductAccessMetrics;
 import com.jacksam.productfilter.entity.UserAccess;
 import com.jacksam.productfilter.enums.AccessLevel;
 import com.jacksam.productfilter.enums.AuditAction;
 import com.jacksam.productfilter.repository.CategoryRepository;
+import com.jacksam.productfilter.repository.FilterRuleRepository;
 import com.jacksam.productfilter.repository.ProductAccessMetricsRepository;
 import com.jacksam.productfilter.repository.ProductRepository;
 import com.jacksam.productfilter.repository.UserAccessRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ProductService {
@@ -32,17 +37,20 @@ public class ProductService {
     private final UserAccessRepository userAccessRepository;
     private final ProductAccessMetricsRepository metricsRepository;
     private final AuditService auditService;
+    private final FilterRuleRepository filterRuleRepository;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
                           UserAccessRepository userAccessRepository,
                           ProductAccessMetricsRepository metricsRepository,
-                          AuditService auditService) {
+                          AuditService auditService,
+                          FilterRuleRepository filterRuleRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.userAccessRepository = userAccessRepository;
         this.metricsRepository = metricsRepository;
         this.auditService = auditService;
+        this.filterRuleRepository = filterRuleRepository;
     }
 
     @Cacheable(value = "userProducts", key = "#userId")
@@ -71,10 +79,11 @@ public class ProductService {
                 .filter(p -> accessibleIds.contains(p.getId()))
                 .toList();
 
-        return new org.springframework.data.domain.PageImpl<>(
-                filtered.stream().map(ProductDTO::from).toList(),
-                pageable,
-                products.getTotalElements());
+        List<FilterRule> rules = filterRuleRepository.findByEnabledTrueOrderByRuleOrderAsc();
+
+        List<ProductDTO> dtos = applyRules(filtered, rules);
+
+        return new PageImpl<>(dtos, pageable, products.getTotalElements());
     }
 
     public ProductDTO getProduct(Long userId, Long productId) {
@@ -89,7 +98,9 @@ public class ProductService {
         trackView(userId, productId);
         auditService.log(userId, AuditAction.VIEWED, "PRODUCT", productId, null);
 
-        return ProductDTO.from(product);
+        List<FilterRule> rules = filterRuleRepository.findByEnabledTrueOrderByRuleOrderAsc();
+        var dtos = applyRules(List.of(product), rules);
+        return dtos.isEmpty() ? ProductDTO.from(product) : dtos.get(0);
     }
 
     @CacheEvict(value = "userProducts", key = "#userId")
@@ -142,5 +153,81 @@ public class ProductService {
         metrics.setTotalViewCount(metrics.getTotalViewCount() + 1);
         metrics.setUniqueUserCount(metrics.getUniqueUserCount() + 1);
         metricsRepository.save(metrics);
+    }
+
+    private List<ProductDTO> applyRules(List<Product> products, List<FilterRule> rules) {
+        List<ProductDTO> result = new ArrayList<>();
+
+        for (Product p : products) {
+            Map<String, Object> productMap = Map.of(
+                    "id", p.getId(),
+                    "name", p.getName(),
+                    "description", p.getDescription() != null ? p.getDescription() : "",
+                    "price", p.getPrice(),
+                    "quantity", p.getQuantity(),
+                    "categoryName", p.getCategory() != null ? p.getCategory().getName() : ""
+            );
+
+            List<String> tags = new ArrayList<>();
+            boolean hidden = false;
+
+            for (FilterRule rule : rules) {
+                var matches = evaluate(rule, productMap);
+                if (!matches.isEmpty()) {
+                    switch (rule.getActionType()) {
+                        case "TAG" -> tags.add(rule.getActionValue());
+                        case "FLAG" -> tags.add("FLAG:" + rule.getActionValue());
+                        case "HIDE" -> hidden = true;
+                    }
+                }
+            }
+
+            if (hidden) continue;
+
+            ProductDTO dto = ProductDTO.from(p);
+            result.add(new ProductDTO(
+                    dto.id(), dto.name(), dto.description(),
+                    dto.price(), dto.quantity(), dto.active(),
+                    dto.imageUrl(), dto.categoryId(), dto.categoryName(),
+                    dto.ownerId(), dto.departmentId(),
+                    dto.createdAt(), dto.updatedAt(),
+                    tags
+            ));
+        }
+
+        return result;
+    }
+
+    private List<Map<String, String>> evaluate(FilterRule rule, Map<String, Object> product) {
+        Object fieldValue = product.get(rule.getField());
+        if (fieldValue == null) return List.of();
+
+        boolean matches = switch (rule.getOperator()) {
+            case "eq" -> fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
+            case "neq" -> !fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
+            case "gt" -> toDouble(fieldValue) > toDouble(rule.getRuleValue());
+            case "gte" -> toDouble(fieldValue) >= toDouble(rule.getRuleValue());
+            case "lt" -> toDouble(fieldValue) < toDouble(rule.getRuleValue());
+            case "lte" -> toDouble(fieldValue) <= toDouble(rule.getRuleValue());
+            case "contains" -> fieldValue.toString().toLowerCase().contains(rule.getRuleValue().toLowerCase());
+            case "starts" -> fieldValue.toString().toLowerCase().startsWith(rule.getRuleValue().toLowerCase());
+            case "in" -> List.of(rule.getRuleValue().split(",")).stream()
+                    .anyMatch(v -> v.trim().equalsIgnoreCase(fieldValue.toString()));
+            default -> false;
+        };
+
+        if (matches) {
+            return List.of(Map.of(
+                    "rule", rule.getName(),
+                    "action", rule.getActionType(),
+                    "value", rule.getActionValue()
+            ));
+        }
+        return List.of();
+    }
+
+    private double toDouble(Object v) {
+        try { return Double.parseDouble(v.toString()); }
+        catch (NumberFormatException e) { return 0; }
     }
 }

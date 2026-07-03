@@ -1,23 +1,30 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { products as productApi } from '../api/client'
-import type { Product } from '../types'
+import type { Product, Category } from '../types'
 
 export default function Products() {
   const navigate = useNavigate()
   const [data, setData] = useState({ content: [] as Product[], totalElements: 0, totalPages: 0, number: 0 })
   const [search, setSearch] = useState('')
   const [inStock, setInStock] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [sortBy, setSortBy] = useState('name')
   const [order, setOrder] = useState('asc')
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [cats, setCats] = useState<Category[]>([])
+
+  useEffect(() => {
+    productApi.categories().then(setCats).catch(() => {})
+  }, [])
 
   const fetch = () => {
     setLoading(true)
     productApi.list({
       search: search || undefined,
       inStock: inStock === 'all' ? undefined : inStock === 'true',
+      categoryId: categoryId || undefined,
       sortBy,
       order,
       page,
@@ -25,8 +32,8 @@ export default function Products() {
     }).then(setData).finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetch() }, [page, sortBy, order])
-  useEffect(() => { setPage(0) }, [search, inStock])
+  useEffect(() => { fetch() }, [page, sortBy, order, categoryId])
+  useEffect(() => { setPage(0) }, [search, inStock, categoryId])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,6 +69,14 @@ export default function Products() {
               placeholder="Search products..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             />
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
+            >
+              <option value="">All categories</option>
+              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
             <select
               value={inStock}
               onChange={(e) => setInStock(e.target.value)}
@@ -107,14 +122,15 @@ export default function Products() {
                 <th className="px-4 py-3 font-medium">Qty</th>
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Tags</th>
                 <th className="px-4 py-3 font-medium">Created</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading...</td></tr>
               ) : data.content.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No products found</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No products found</td></tr>
               ) : data.content.map((p) => (
                 <tr
                   key={p.id}
@@ -136,6 +152,19 @@ export default function Products() {
                     }`}>
                       {p.active ? 'Active' : 'Inactive'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.tags && p.tags.length > 0 ? (
+                      <div className="flex gap-1 flex-wrap">
+                        {p.tags.map((t, i) => (
+                          <span key={i} className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                            t.startsWith('FLAG:') ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {t.startsWith('FLAG:') ? '🚩' : '🏷️'} {t.replace('FLAG:', '')}
+                          </span>
+                        ))}
+                      </div>
+                    ) : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {new Date(p.createdAt).toLocaleDateString()}

@@ -10,6 +10,7 @@ export interface Product {
   active: boolean
   createdAt: string
   updatedAt: string
+  tags?: string[]
 }
 
 export interface Category {
@@ -26,7 +27,7 @@ export interface FilterRule {
   description: string
   field: string
   operator: string
-  value: string
+  ruleValue: string
   logicGroup: string
   ruleOrder: number
   actionType: string

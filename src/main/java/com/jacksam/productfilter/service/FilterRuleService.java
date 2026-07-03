@@ -34,7 +34,7 @@ public class FilterRuleService {
         existing.setDescription(rule.getDescription());
         existing.setField(rule.getField());
         existing.setOperator(rule.getOperator());
-        existing.setValue(rule.getValue());
+        existing.setRuleValue(rule.getRuleValue());
         existing.setLogicGroup(rule.getLogicGroup());
         existing.setActionType(rule.getActionType());
         existing.setActionValue(rule.getActionValue());
@@ -51,15 +51,15 @@ public class FilterRuleService {
         if (fieldValue == null) return List.of();
 
         boolean matches = switch (rule.getOperator()) {
-            case "eq" -> fieldValue.toString().equalsIgnoreCase(rule.getValue());
-            case "neq" -> !fieldValue.toString().equalsIgnoreCase(rule.getValue());
-            case "gt" -> toDouble(fieldValue) > toDouble(rule.getValue());
-            case "gte" -> toDouble(fieldValue) >= toDouble(rule.getValue());
-            case "lt" -> toDouble(fieldValue) < toDouble(rule.getValue());
-            case "lte" -> toDouble(fieldValue) <= toDouble(rule.getValue());
-            case "contains" -> fieldValue.toString().toLowerCase().contains(rule.getValue().toLowerCase());
-            case "starts" -> fieldValue.toString().toLowerCase().startsWith(rule.getValue().toLowerCase());
-            case "in" -> List.of(rule.getValue().split(",")).stream()
+            case "eq" -> fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
+            case "neq" -> !fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
+            case "gt" -> toDouble(fieldValue) > toDouble(rule.getRuleValue());
+            case "gte" -> toDouble(fieldValue) >= toDouble(rule.getRuleValue());
+            case "lt" -> toDouble(fieldValue) < toDouble(rule.getRuleValue());
+            case "lte" -> toDouble(fieldValue) <= toDouble(rule.getRuleValue());
+            case "contains" -> fieldValue.toString().toLowerCase().contains(rule.getRuleValue().toLowerCase());
+            case "starts" -> fieldValue.toString().toLowerCase().startsWith(rule.getRuleValue().toLowerCase());
+            case "in" -> List.of(rule.getRuleValue().split(",")).stream()
                     .anyMatch(v -> v.trim().equalsIgnoreCase(fieldValue.toString()));
             default -> false;
         };

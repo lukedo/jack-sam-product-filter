@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { products as productApi, categories as categoryApi } from '../api/client'
+import { products as productApi } from '../api/client'
 import type { Category } from '../types'
 import toast from 'react-hot-toast'
 
@@ -13,7 +13,7 @@ export default function ProductForm() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    categoryApi.list().then(setCats).catch(() => {})
+    productApi.categories().then(setCats).catch(() => {})
     if (isEdit) {
       productApi.get(Number(id)).then((p) => {
         setForm({

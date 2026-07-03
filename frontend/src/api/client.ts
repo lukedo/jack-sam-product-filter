@@ -34,6 +34,7 @@ export const products = {
     api.post<Product>('/products', data).then((r) => r.data),
   batchCreate: (items: Record<string, unknown>[]) =>
     api.post<Product[]>('/products/batch', { products: items }).then((r) => r.data),
+  categories: () => api.get<Category[]>('/products/categories').then((r) => r.data),
 }
 
 export const categories = {

@@ -4,6 +4,8 @@ import com.jacksam.productfilter.dto.BatchCreateRequest;
 import com.jacksam.productfilter.dto.CreateProductRequest;
 import com.jacksam.productfilter.dto.ProductDTO;
 import com.jacksam.productfilter.dto.ProductFilterRequest;
+import com.jacksam.productfilter.entity.Category;
+import com.jacksam.productfilter.repository.CategoryRepository;
 import com.jacksam.productfilter.service.ProductService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -17,9 +19,16 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
+    private final CategoryRepository categoryRepository;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, CategoryRepository categoryRepository) {
         this.productService = productService;
+        this.categoryRepository = categoryRepository;
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<Category>> getCategories() {
+        return ResponseEntity.ok(categoryRepository.findAll());
     }
 
     @GetMapping
