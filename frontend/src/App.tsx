@@ -7,6 +7,9 @@ import Products from './pages/Products'
 import ProductForm from './pages/ProductForm'
 import Users from './pages/Users'
 import UserAccess from './pages/UserAccess'
+import BatchProducts from './pages/BatchProducts'
+import Categories from './pages/Categories'
+import FilterRules from './pages/FilterRules'
 import AuditLogs from './pages/AuditLogs'
 
 export default function App() {
@@ -23,6 +26,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<ProductForm />} />
+        <Route path="products/batch" element={<BatchProducts />} />
         <Route path="products/:id" element={<ProductForm />} />
         <Route
           path="users"
@@ -37,6 +41,22 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <UserAccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="categories"
+          element={
+            <ProtectedRoute adminOnly>
+              <Categories />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="filter-rules"
+          element={
+            <ProtectedRoute adminOnly>
+              <FilterRules />
             </ProtectedRoute>
           }
         />

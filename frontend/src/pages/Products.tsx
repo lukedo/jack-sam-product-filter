@@ -37,12 +37,20 @@ export default function Products() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-        <button
-          onClick={() => navigate('/products/new')}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-        >
-          + New Product
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/products/batch')}
+            className="px-4 py-2 border border-indigo-300 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors"
+          >
+            Batch Create
+          </button>
+          <button
+            onClick={() => navigate('/products/new')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
+            + New Product
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -93,6 +101,7 @@ export default function Products() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-gray-500">
+                <th className="px-4 py-3 font-medium text-gray-400 w-12">ID</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Price</th>
                 <th className="px-4 py-3 font-medium">Qty</th>
@@ -103,15 +112,16 @@ export default function Products() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading...</td></tr>
               ) : data.content.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No products found</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No products found</td></tr>
               ) : data.content.map((p) => (
                 <tr
                   key={p.id}
                   className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/products/${p.id}`)}
                 >
+                  <td className="px-4 py-3 text-gray-400 text-xs">{p.id}</td>
                   <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
                   <td className="px-4 py-3">${p.price.toFixed(2)}</td>
                   <td className="px-4 py-3">

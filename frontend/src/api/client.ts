@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Product, PageResponse, LoginResponse, Category, AuditLog, User } from '../types'
+import type { Product, PageResponse, LoginResponse, Category, AuditLog, User, FilterRule } from '../types'
 
 const api = axios.create({ baseURL: '/api' })
 
@@ -32,10 +32,28 @@ export const products = {
   get: (id: number) => api.get<Product>(`/products/${id}`).then((r) => r.data),
   create: (data: Record<string, unknown>) =>
     api.post<Product>('/products', data).then((r) => r.data),
+  batchCreate: (items: Record<string, unknown>[]) =>
+    api.post<Product[]>('/products/batch', { products: items }).then((r) => r.data),
 }
 
 export const categories = {
   list: () => api.get<Category[]>('/admin/categories').then((r) => r.data),
+  create: (data: Record<string, string>) =>
+    api.post<Category>('/admin/categories', data).then((r) => r.data),
+  update: (id: number, data: Record<string, string>) =>
+    api.put<Category>(`/admin/categories/${id}`, data).then((r) => r.data),
+  delete: (id: number) => api.delete(`/admin/categories/${id}`),
+}
+
+export const filterRules = {
+  list: () => api.get<FilterRule[]>('/admin/filter-rules').then((r) => r.data),
+  create: (data: Record<string, unknown>) =>
+    api.post<FilterRule>('/admin/filter-rules', data).then((r) => r.data),
+  update: (id: number, data: Record<string, unknown>) =>
+    api.put<FilterRule>(`/admin/filter-rules/${id}`, data).then((r) => r.data),
+  delete: (id: number) => api.delete(`/admin/filter-rules/${id}`),
+  evaluate: (product: Record<string, unknown>) =>
+    api.post(`/admin/filter-rules/evaluate`, { product }).then((r) => r.data),
 }
 
 export const users = {

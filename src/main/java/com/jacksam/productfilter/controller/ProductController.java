@@ -1,10 +1,12 @@
 package com.jacksam.productfilter.controller;
 
+import com.jacksam.productfilter.dto.BatchCreateRequest;
 import com.jacksam.productfilter.dto.CreateProductRequest;
 import com.jacksam.productfilter.dto.ProductDTO;
 import com.jacksam.productfilter.dto.ProductFilterRequest;
 import com.jacksam.productfilter.service.ProductService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -55,5 +57,18 @@ public class ProductController {
             @Valid @RequestBody CreateProductRequest req) {
         Long userId = (Long) auth.getPrincipal();
         return ResponseEntity.ok(productService.createProduct(userId, req));
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<List<ProductDTO>> batchCreate(
+            Authentication auth,
+            @Valid @RequestBody BatchCreateRequest req) {
+        Long userId = (Long) auth.getPrincipal();
+        List<ProductDTO> results = req.products().stream()
+                .map(item -> productService.createProduct(userId, new CreateProductRequest(
+                        item.name(), item.description(), item.price(),
+                        item.quantity(), item.categoryId(), item.imageUrl())))
+                .toList();
+        return ResponseEntity.ok(results);
     }
 }

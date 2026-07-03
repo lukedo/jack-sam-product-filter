@@ -93,11 +93,14 @@ A full-featured React dashboard with real-time filtering, pagination, and admin 
 ### Pages
 
 | Page | Path | Access | Description |
-|---|---|---|---|
+|---|---|---|---|---|
 | Login | `/login` | Public | Sign in with JWT |
 | Dashboard | `/` | All | Product stats overview |
 | Products | `/products` | All | List, search, filter products |
 | New Product | `/products/new` | All | Create a product |
+| Batch Create | `/products/batch` | All | Tab-separated bulk product creation |
+| Categories | `/categories` | ADMIN | Manage product categories |
+| Filter Rules | `/filter-rules` | ADMIN | Build custom filter rules with conditions/actions |
 | Users | `/users` | ADMIN | Create and manage users |
 | Access | `/access` | ADMIN | Grant/revoke product access |
 | Audit Logs | `/audit-logs` | ADMIN | View all audit events |
@@ -228,6 +231,41 @@ DELETE /api/admin/user-access/{userId}/{productId}
 GET /api/admin/audit-logs?page=0&size=50
 ```
 
+#### Batch create products
+
+```
+POST /api/products/batch
+Content-Type: application/json
+
+{
+  "products": [
+    { "name": "Widget A", "price": 29.99, "quantity": 100, "categoryId": 1 },
+    { "name": "Widget B", "price": 49.99, "quantity": 50, "categoryId": 1 }
+  ]
+}
+```
+
+#### Category CRUD
+
+```
+GET    /api/admin/categories           # List all (tree structure)
+POST   /api/admin/categories           # Create { "name", "description" }
+PUT    /api/admin/categories/{id}      # Update { "name", "description" }
+DELETE /api/admin/categories/{id}      # Delete
+```
+
+#### Filter Rules CRUD
+
+```
+GET    /api/admin/filter-rules              # List all rules
+POST   /api/admin/filter-rules              # Create rule
+PUT    /api/admin/filter-rules/{id}         # Update rule
+DELETE /api/admin/filter-rules/{id}         # Delete
+POST   /api/admin/filter-rules/evaluate     # Test product against enabled rules
+```
+
+Rule entity fields: `name`, `field` (name/price/quantity/categoryName/description), `operator` (eq/neq/gt/gte/lt/lte/contains/starts/in), `value`, `logicGroup`, `actionType` (TAG/HIDE/SHOW/FLAG), `actionValue`, `enabled`.
+
 #### Create user
 
 ```
@@ -273,20 +311,25 @@ src/main/java/com/jacksam/productfilter/
 │   └── SecurityConfig.java           # JWT filter, CORS, endpoint security
 ├── controller/
 │   ├── AuthController.java           # POST /api/auth/login
-│   ├── ProductController.java        # GET/POST /api/products
-│   └── AdminController.java          # Bulk grant, audit logs, user management
-├── dto/                              # Request/response records
-├── entity/                           # JPA entities (8 tables)
+│   ├── ProductController.java        # GET/POST /api/products + batch create
+│   └── AdminController.java          # Bulk grant, audit logs, user/category/rule CRUD
+├── dto/                              # Request/response records (including BatchCreateRequest)
+├── entity/                           # JPA entities (9 tables: +FilterRule)
 ├── enums/                            # Permission, AccessLevel, AuditAction
-├── repository/                       # Spring Data JPA repositories (7)
+├── repository/                       # Spring Data JPA repositories (8: +FilterRuleRepository)
 ├── security/
 │   ├── JwtTokenProvider.java         # JWT generation + validation
 │   └── JwtAuthFilter.java            # Bearer token extraction filter
 └── service/
     ├── ProductService.java           # Core: caching, filtering, access control, metrics
     ├── UserService.java              # User CRUD
-    └── AuditService.java             # Audit logging
+    ├── AuditService.java             # Audit logging
+    └── FilterRuleService.java        # Rule evaluation engine (6+ operators)
 ```
+
+### New entities
+- **FilterRule** — field/operator/value conditions with action type (TAG/HIDE/SHOW/FLAG), enable/disable, ordering
+- **BatchCreateRequest** — list of product items for bulk creation
 
 ### Frontend (`frontend/`)
 
@@ -313,8 +356,11 @@ frontend/
     ├── pages/
     │   ├── Login.tsx                # Sign-in form with test account hints
     │   ├── Dashboard.tsx            # Product stats cards
-    │   ├── Products.tsx             # Filterable product table + pagination
+    │   ├── Products.tsx             # Filterable product table + pagination (with ID column)
     │   ├── ProductForm.tsx          # Create/edit product form
+    │   ├── BatchProducts.tsx        # Tab-separated bulk product creation
+    │   ├── Categories.tsx           # Category list + add/edit/delete modal
+    │   ├── FilterRules.tsx          # Rule builder with condition rows + action selectors
     │   ├── Users.tsx                # User list + create user form
     │   ├── UserAccess.tsx           # Grant product access to users
     │   └── AuditLogs.tsx            # Audit event viewer
@@ -334,7 +380,9 @@ frontend/
 - [x] Audit logging (view, create, grant, revoke events)
 - [x] Product access analytics (view counts, unique users per day)
 - [x] Caching (user accessible products with TTL)
-- [x] Category hierarchy (parent/child)
+- [x] Category hierarchy (parent/child) + full CRUD
+- [x] Batch product creation (tab-separated, any number of products)
+- [x] Custom filter rules engine (6+ operators, 4 action types, enable/disable toggle)
 - [x] Global exception handling
 - [x] Docker Compose (app + PostgreSQL)
 - [x] Dev profile (H2 in-memory, no Docker needed)
@@ -342,8 +390,11 @@ frontend/
 ### Frontend
 - [x] Login page with JWT authentication
 - [x] Dashboard with product statistics cards
-- [x] Product list with search, filter, sort, and pagination
+- [x] Product list with search, filter, sort, pagination, and ID column
 - [x] Product create/edit form
+- [x] Batch product creation page (tab-separated paste)
+- [x] Category management page (list + add/edit/delete modal)
+- [x] Filter rules builder (condition builder with field-aware operators, action selectors)
 - [x] User management (list + create)
 - [x] Access grant interface
 - [x] Audit log viewer with action labels
