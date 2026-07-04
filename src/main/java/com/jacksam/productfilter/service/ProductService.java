@@ -104,6 +104,45 @@ public class ProductService {
     }
 
     @CacheEvict(value = "userProducts", key = "#userId")
+    public ProductDTO updateProduct(Long userId, Long productId, CreateProductRequest req) {
+        List<Long> accessibleIds = getAccessibleProductIds(userId);
+        if (!accessibleIds.contains(productId)) {
+            throw new SecurityException("Access denied to product " + productId);
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
+
+        Category category = null;
+        if (req.categoryId() != null) {
+            category = categoryRepository.findById(req.categoryId()).orElse(null);
+        }
+
+        product.setName(req.name());
+        product.setDescription(req.description());
+        product.setPrice(req.price());
+        product.setQuantity(req.quantity() != null ? req.quantity() : 0);
+        product.setCategory(category);
+        product.setImageUrl(req.imageUrl());
+
+        product = productRepository.save(product);
+        auditService.log(userId, AuditAction.UPDATED, "PRODUCT", product.getId(), "Updated product: " + req.name());
+
+        return ProductDTO.from(product);
+    }
+
+    @CacheEvict(value = "userProducts", key = "#userId")
+    public void deleteProduct(Long userId, Long productId) {
+        List<Long> accessibleIds = getAccessibleProductIds(userId);
+        if (!accessibleIds.contains(productId)) {
+            throw new SecurityException("Access denied to product " + productId);
+        }
+
+        productRepository.deleteById(productId);
+        auditService.log(userId, AuditAction.DELETED, "PRODUCT", productId, "Deleted product " + productId);
+    }
+
+    @CacheEvict(value = "userProducts", key = "#userId")
     public ProductDTO createProduct(Long userId, CreateProductRequest req) {
         Category category = null;
         if (req.categoryId() != null) {

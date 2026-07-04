@@ -68,6 +68,22 @@ public class ProductController {
         return ResponseEntity.ok(productService.createProduct(userId, req));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDTO> updateProduct(
+            Authentication auth,
+            @PathVariable Long id,
+            @Valid @RequestBody CreateProductRequest req) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(productService.updateProduct(userId, id, req));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        productService.deleteProduct(userId, id);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/batch")
     public ResponseEntity<List<ProductDTO>> batchCreate(
             Authentication auth,

@@ -32,6 +32,9 @@ export const products = {
   get: (id: number) => api.get<Product>(`/products/${id}`).then((r) => r.data),
   create: (data: Record<string, unknown>) =>
     api.post<Product>('/products', data).then((r) => r.data),
+  update: (id: number, data: Record<string, unknown>) =>
+    api.put<Product>(`/products/${id}`, data).then((r) => r.data),
+  delete: (id: number) => api.delete(`/products/${id}`),
   batchCreate: (items: Record<string, unknown>[]) =>
     api.post<Product[]>('/products/batch', { products: items }).then((r) => r.data),
   categories: () => api.get<Category[]>('/products/categories').then((r) => r.data),

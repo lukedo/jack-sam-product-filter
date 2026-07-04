@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import ProductForm from './pages/ProductForm'
+import ProductDetail from './pages/ProductDetail'
 import Users from './pages/Users'
 import UserAccess from './pages/UserAccess'
 import BatchProducts from './pages/BatchProducts'
@@ -27,7 +28,8 @@ export default function App() {
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<ProductForm />} />
         <Route path="products/batch" element={<BatchProducts />} />
-        <Route path="products/:id" element={<ProductForm />} />
+        <Route path="products/:id/edit" element={<ProductForm />} />
+        <Route path="products/:id" element={<ProductDetail />} />
         <Route
           path="users"
           element={

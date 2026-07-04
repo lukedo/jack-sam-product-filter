@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { products as productApi } from '../api/client'
 import type { Product, Category } from '../types'
+import toast from 'react-hot-toast'
 
 export default function Products() {
   const navigate = useNavigate()
@@ -132,13 +133,16 @@ export default function Products() {
               ) : data.content.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No products found</td></tr>
               ) : data.content.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/products/${p.id}`)}
-                >
+                <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-400 text-xs">{p.id}</td>
-                  <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => navigate(`/products/${p.id}`)}
+                      className="font-medium text-gray-800 hover:text-indigo-600 text-left"
+                    >
+                      {p.name}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">${p.price.toFixed(2)}</td>
                   <td className="px-4 py-3">
                     <span className={p.quantity > 0 ? 'text-green-600' : 'text-red-500'}>

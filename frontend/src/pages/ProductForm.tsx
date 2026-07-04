@@ -31,17 +31,23 @@ export default function ProductForm() {
     e.preventDefault()
     setLoading(true)
     try {
-      await productApi.create({
+      const data = {
         name: form.name,
         description: form.description,
         price: Number(form.price),
         quantity: Number(form.quantity),
         categoryId: form.categoryId ? Number(form.categoryId) : null,
-      })
-      toast.success('Product created')
+      }
+      if (isEdit) {
+        await productApi.update(Number(id), data)
+        toast.success('Product updated')
+      } else {
+        await productApi.create(data)
+        toast.success('Product created')
+      }
       navigate('/products')
     } catch {
-      toast.error('Failed to create product')
+      toast.error(isEdit ? 'Failed to update product' : 'Failed to create product')
     } finally {
       setLoading(false)
     }
