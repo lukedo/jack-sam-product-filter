@@ -4,10 +4,12 @@ export interface Product {
   description: string
   price: number
   quantity: number
+  active: boolean
+  imageUrl: string
   categoryId: number
   categoryName: string
-  imageUrl: string
-  active: boolean
+  ownerId: number
+  departmentId: number | null
   createdAt: string
   updatedAt: string
   tags?: string[]
@@ -18,7 +20,7 @@ export interface Category {
   name: string
   description: string
   parentCategoryId: number | null
-  subcategories: Category[]
+  subCategories: Category[]
 }
 
 export interface FilterRule {
@@ -40,19 +42,18 @@ export interface User {
   username: string
   email: string
   displayName: string
-  role: { name: string }
+  roles: string[]
   departmentId: number | null
-  active: boolean
 }
 
 export interface AuditLog {
   id: number
   userId: number
-  username: string
   action: string
-  entityType: string
-  entityId: number
+  resourceType: string
+  resourceId: number
   details: string
+  ipAddress: string
   timestamp: string
 }
 
@@ -66,10 +67,7 @@ export interface PageResponse<T> {
 
 export interface LoginResponse {
   token: string
-  userId: number
-  username: string
-  displayName: string
-  email: string
-  role: string
-  departmentId: number | null
+  tokenType: string
+  expiresIn: number
+  user: User
 }

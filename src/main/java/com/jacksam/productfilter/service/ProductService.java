@@ -11,7 +11,6 @@ import com.jacksam.productfilter.entity.UserAccess;
 import com.jacksam.productfilter.enums.AccessLevel;
 import com.jacksam.productfilter.enums.AuditAction;
 import com.jacksam.productfilter.repository.CategoryRepository;
-import com.jacksam.productfilter.repository.FilterRuleRepository;
 import com.jacksam.productfilter.repository.ProductAccessMetricsRepository;
 import com.jacksam.productfilter.repository.ProductRepository;
 import com.jacksam.productfilter.repository.UserAccessRepository;
@@ -37,20 +36,20 @@ public class ProductService {
     private final UserAccessRepository userAccessRepository;
     private final ProductAccessMetricsRepository metricsRepository;
     private final AuditService auditService;
-    private final FilterRuleRepository filterRuleRepository;
+    private final FilterRuleService filterRuleService;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
                           UserAccessRepository userAccessRepository,
                           ProductAccessMetricsRepository metricsRepository,
                           AuditService auditService,
-                          FilterRuleRepository filterRuleRepository) {
+                          FilterRuleService filterRuleService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.userAccessRepository = userAccessRepository;
         this.metricsRepository = metricsRepository;
         this.auditService = auditService;
-        this.filterRuleRepository = filterRuleRepository;
+        this.filterRuleService = filterRuleService;
     }
 
     @Cacheable(value = "userProducts", key = "#userId")
@@ -74,7 +73,7 @@ public class ProductService {
                 filter.categoryId(), filter.includeSubCategories(),
                 filter.inStock(), filter.active(), pageable);
 
-        List<FilterRule> rules = filterRuleRepository.findByEnabledTrueOrderByRuleOrderAsc();
+        List<FilterRule> rules = filterRuleService.getEnabled();
 
         List<ProductDTO> dtos = applyRules(products.getContent(), rules);
 
@@ -93,7 +92,7 @@ public class ProductService {
         trackView(userId, productId);
         auditService.log(userId, AuditAction.VIEWED, "PRODUCT", productId, null);
 
-        List<FilterRule> rules = filterRuleRepository.findByEnabledTrueOrderByRuleOrderAsc();
+        List<FilterRule> rules = filterRuleService.getEnabled();
         var dtos = applyRules(List.of(product), rules);
         return dtos.isEmpty() ? ProductDTO.from(product) : dtos.get(0);
     }
@@ -206,7 +205,7 @@ public class ProductService {
             boolean hidden = false;
 
             for (FilterRule rule : rules) {
-                var matches = evaluate(rule, productMap);
+                var matches = filterRuleService.evaluate(rule, productMap);
                 if (!matches.isEmpty()) {
                     switch (rule.getActionType()) {
                         case "TAG" -> tags.add(rule.getActionValue());
@@ -230,38 +229,5 @@ public class ProductService {
         }
 
         return result;
-    }
-
-    private List<Map<String, String>> evaluate(FilterRule rule, Map<String, Object> product) {
-        Object fieldValue = product.get(rule.getField());
-        if (fieldValue == null) return List.of();
-
-        boolean matches = switch (rule.getOperator()) {
-            case "eq" -> fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
-            case "neq" -> !fieldValue.toString().equalsIgnoreCase(rule.getRuleValue());
-            case "gt" -> toDouble(fieldValue) > toDouble(rule.getRuleValue());
-            case "gte" -> toDouble(fieldValue) >= toDouble(rule.getRuleValue());
-            case "lt" -> toDouble(fieldValue) < toDouble(rule.getRuleValue());
-            case "lte" -> toDouble(fieldValue) <= toDouble(rule.getRuleValue());
-            case "contains" -> fieldValue.toString().toLowerCase().contains(rule.getRuleValue().toLowerCase());
-            case "starts" -> fieldValue.toString().toLowerCase().startsWith(rule.getRuleValue().toLowerCase());
-            case "in" -> List.of(rule.getRuleValue().split(",")).stream()
-                    .anyMatch(v -> v.trim().equalsIgnoreCase(fieldValue.toString()));
-            default -> false;
-        };
-
-        if (matches) {
-            return List.of(Map.of(
-                    "rule", rule.getName(),
-                    "action", rule.getActionType(),
-                    "value", rule.getActionValue()
-            ));
-        }
-        return List.of();
-    }
-
-    private double toDouble(Object v) {
-        try { return Double.parseDouble(v.toString()); }
-        catch (NumberFormatException e) { return 0; }
     }
 }
