@@ -63,25 +63,20 @@ public class ProductService {
     }
 
     public Page<ProductDTO> getAccessibleProducts(Long userId, ProductFilterRequest filter) {
-        List<Long> accessibleIds = getAccessibleProductIds(userId);
-
         Sort sort = Sort.by(
                 filter.order().equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
                 filter.sortBy());
         PageRequest pageable = PageRequest.of(filter.page(), filter.size(), sort);
 
-        Page<Product> products = productRepository.findByFilters(
+        Page<Product> products = productRepository.findAccessibleByFilters(
+                userId, List.of(AccessLevel.READ, AccessLevel.WRITE, AccessLevel.ADMIN),
                 filter.search(), filter.minPrice(), filter.maxPrice(),
                 filter.categoryId(), filter.includeSubCategories(),
                 filter.inStock(), filter.active(), pageable);
 
-        List<Product> filtered = products.getContent().stream()
-                .filter(p -> accessibleIds.contains(p.getId()))
-                .toList();
-
         List<FilterRule> rules = filterRuleRepository.findByEnabledTrueOrderByRuleOrderAsc();
 
-        List<ProductDTO> dtos = applyRules(filtered, rules);
+        List<ProductDTO> dtos = applyRules(products.getContent(), rules);
 
         return new PageImpl<>(dtos, pageable, products.getTotalElements());
     }
