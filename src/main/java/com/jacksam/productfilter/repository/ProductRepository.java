@@ -1,6 +1,7 @@
 package com.jacksam.productfilter.repository;
 
 import com.jacksam.productfilter.entity.Product;
+import com.jacksam.productfilter.enums.AccessLevel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,10 +23,40 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 OR (:includeSub = true AND p.category.id IN (
                     SELECT c.id FROM Category c WHERE c.parentCategoryId = :categoryId
                 )))
-            AND (:inStock IS NULL OR (:inStock = true AND p.quantity > 0) OR (:inStock = false))
+            AND (:inStock IS NULL OR (:inStock = true AND p.quantity > 0)
+                OR (:inStock = false AND p.quantity <= 0))
             AND (:active IS NULL OR p.active = :active)
             """)
     Page<Product> findByFilters(
+            @Param("search") String search,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("categoryId") Long categoryId,
+            @Param("includeSub") Boolean includeSub,
+            @Param("inStock") Boolean inStock,
+            @Param("active") Boolean active,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Product p WHERE
+            (p.ownerId = :userId OR p.id IN (
+                SELECT ua.productId FROM UserAccess ua
+                WHERE ua.userId = :userId AND ua.accessLevel IN :levels))
+            AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (:minPrice IS NULL OR p.price >= :minPrice)
+            AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+            AND (:categoryId IS NULL OR p.category.id = :categoryId
+                OR (:includeSub = true AND p.category.id IN (
+                    SELECT c.id FROM Category c WHERE c.parentCategoryId = :categoryId
+                )))
+            AND (:inStock IS NULL OR (:inStock = true AND p.quantity > 0)
+                OR (:inStock = false AND p.quantity <= 0))
+            AND (:active IS NULL OR p.active = :active)
+            """)
+    Page<Product> findAccessibleByFilters(
+            @Param("userId") Long userId,
+            @Param("levels") List<AccessLevel> levels,
             @Param("search") String search,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
