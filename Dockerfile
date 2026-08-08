@@ -7,12 +7,12 @@ COPY frontend/ .
 RUN npx vite build
 
 # Stage 2: Build backend
-FROM eclipse-temurin:21-jdk-alpine AS backend-build
+FROM maven:3.9-eclipse-temurin-21-alpine AS backend-build
 WORKDIR /app
 COPY pom.xml ./
 COPY src ./src
 COPY --from=frontend-build /frontend/dist ./src/main/resources/static
-RUN apk add --no-cache maven && mvn package -DskipTests -q
+RUN mvn package -DskipTests -q
 
 # Stage 3: Runtime
 FROM eclipse-temurin:21-jre-alpine

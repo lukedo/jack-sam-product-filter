@@ -20,6 +20,10 @@ public class FilterRuleService {
         return repository.findAllByOrderByRuleOrderAsc();
     }
 
+    public List<FilterRule> getEnabled() {
+        return repository.findByEnabledTrueOrderByRuleOrderAsc();
+    }
+
     public FilterRule create(FilterRule rule) {
         if (rule.getRuleOrder() == 0) {
             rule.setRuleOrder((int) repository.count() + 1);

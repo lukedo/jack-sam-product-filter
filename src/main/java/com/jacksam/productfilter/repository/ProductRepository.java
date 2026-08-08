@@ -15,30 +15,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("""
             SELECT p FROM Product p WHERE
-            (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))
-            AND (:minPrice IS NULL OR p.price >= :minPrice)
-            AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-            AND (:categoryId IS NULL OR p.category.id = :categoryId
-                OR (:includeSub = true AND p.category.id IN (
-                    SELECT c.id FROM Category c WHERE c.parentCategoryId = :categoryId
-                )))
-            AND (:inStock IS NULL OR (:inStock = true AND p.quantity > 0)
-                OR (:inStock = false AND p.quantity <= 0))
-            AND (:active IS NULL OR p.active = :active)
-            """)
-    Page<Product> findByFilters(
-            @Param("search") String search,
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice,
-            @Param("categoryId") Long categoryId,
-            @Param("includeSub") Boolean includeSub,
-            @Param("inStock") Boolean inStock,
-            @Param("active") Boolean active,
-            Pageable pageable);
-
-    @Query("""
-            SELECT p FROM Product p WHERE
             (p.ownerId = :userId OR p.id IN (
                 SELECT ua.productId FROM UserAccess ua
                 WHERE ua.userId = :userId AND ua.accessLevel IN :levels))
