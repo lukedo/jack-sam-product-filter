@@ -43,10 +43,13 @@ class ProductFilterRequestTest {
     void zeroOrTooLargeSize_normalizedTo20() {
         ProductFilterRequest zero = new ProductFilterRequest(
                 null, null, null, null, false, null, null, "name", "asc", 0, 0);
+        ProductFilterRequest negative = new ProductFilterRequest(
+                null, null, null, null, false, null, null, "name", "asc", 0, -10);
         ProductFilterRequest huge = new ProductFilterRequest(
                 null, null, null, null, false, null, null, "name", "asc", 0, 500);
 
         assertThat(zero.size()).isEqualTo(20);
+        assertThat(negative.size()).isEqualTo(20);
         assertThat(huge.size()).isEqualTo(20);
     }
 
